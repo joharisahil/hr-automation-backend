@@ -14,4 +14,19 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.redirect('/login');
+  }
+  
+  module.exports = ensureAuthenticated;
+  
+const ensureAuthenticated = require('./middlewares/authMiddleware');
+
+app.get('/dashboard', ensureAuthenticated, (req, res) => {
+  res.send('Welcome to your dashboard');
+});
+
 module.exports = authMiddleware;

@@ -17,37 +17,45 @@ passport.use(new LocalStrategy(
 ));
 
 // Google OAuth Strategy
+
+
 passport.use(new GoogleStrategy(
   {
-    clientID: process.env.GOOGLE_CLIENT_ID, // Get from Google Cloud Console
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET, // Get from Google Cloud Console
-    callbackURL: '/api/auth/google/callback' // Must match the redirect URI in Google Console
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: '/api/auth/google/callback',
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
       // Check if the user exists in the database
-      let user = await User.findOne({ googleId: profile.id });
-      
+      let user = await User.findOne({ where: { googleId: profile.id } });
+
       if (!user) {
-        // If user doesn't exist, create a new one
+        // If user doesn't exist, create a new record
         user = await User.create({
           googleId: profile.id,
           username: profile.displayName,
-          email: profile.emails[0].value // Google returns an array of emails
+          email: profile.emails[0].value, // Get the user's email
         });
+        console.log('New user added via Google Sign-In:', user);
       }
 
       return done(null, user); // Pass the user to the next middleware
     } catch (err) {
+      console.error('Error saving user to database:', err);
       return done(err, null);
     }
   }
 ));
 
+
+
 // Serialize and deserialize user (for session handling)
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
+
+
 
 passport.deserializeUser(async (id, done) => {
   try {
@@ -57,4 +65,6 @@ passport.deserializeUser(async (id, done) => {
     done(err, null);
   }
 });
+
+
 module.exports = passport;

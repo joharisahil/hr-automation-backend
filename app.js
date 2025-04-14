@@ -28,7 +28,7 @@ app.use('/api/auth', authRoutes);
 
 // Database connection
 sequelize
-  .sync({ force: false }) // Set force to false to avoid resetting DB data
+  .sync({ alter:true }) // Set force to false to avoid resetting DB data
   .then(() => console.log('MySQL connected and models synced'))
   .catch(err => console.error('DB Error:', err));
 

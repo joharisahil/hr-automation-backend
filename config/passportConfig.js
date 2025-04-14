@@ -3,6 +3,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../login/models/userModel'); // Adjust path based on your structure
 
+
 // Local Strategy for username/password authentication
 passport.use(new LocalStrategy(
   function (username, password, done) {
@@ -48,10 +49,12 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
-  User.findById(id, (err, user) => {
-    done(err, user);
-  });
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findByPk(id); // Sequelize method for primary key
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
 });
-
 module.exports = passport;

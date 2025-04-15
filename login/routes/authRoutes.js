@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const { register, login } = require('../controllers/authController');
+const {
+  forgotPassword,
+  resetPasswordByEmail,
+  resetPasswordByOTP
+} = require('../controllers/authController');
+
+//forget password routes
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/email', resetPasswordByEmail);
+router.post('/reset-password/otp', resetPasswordByOTP);
 
 // Local authentication routes
 router.post('/register', register);

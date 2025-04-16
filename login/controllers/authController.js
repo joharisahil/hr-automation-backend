@@ -4,7 +4,7 @@ const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET, { expiresIn: '1h' 
 const User = require('../models/userModel');
 const { Op } = require('sequelize');
 const crypto = require('crypto');
-const { sendResetEmail } = require('../utils/mailer');
+const { sendPasswordResetEmail } = require('../utils/mailer'); // Adjust the path as necessary
 
 
 exports.register = async (req, res) => {
@@ -64,7 +64,7 @@ exports.forgotPassword = async (req, res) => {
       const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
       console.log(`Reset link: ${resetLink}`);
 
-      await sendResetEmail(user.email, resetLink);
+      await sendPasswordResetEmail(user.email, resetLink);
       return res.json({ msg: 'Password reset email sent' });
       
     }

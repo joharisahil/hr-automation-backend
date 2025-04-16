@@ -32,6 +32,10 @@ sequelize
   .then(() => console.log('MySQL connected and models synced'))
   .catch(err => console.error('DB Error:', err));
 
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+  
 // Define a protected route for authenticated users
 app.get('/dashboard', (req, res) => {
   if (req.isAuthenticated()) {

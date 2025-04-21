@@ -4,6 +4,7 @@ const sequelize = require('./config/db');
 const passport = require('./config/passportConfig'); // Import Passport setup
 const session = require('express-session');
 const authRoutes = require('./login/routes/authRoutes');
+const UserSubscription = require('./models/userSubscriptionModel');
 
 const app = express();
 

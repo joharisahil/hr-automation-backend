@@ -5,27 +5,45 @@ const User = require('../models/userModel');
 const { Op } = require('sequelize');
 const crypto = require('crypto');
 const { sendResetEmail } = require('../utils/mailer');
+const UserSubscription = require('../models/userSubscriptionModel');
 
 
 exports.register = async (req, res) => {
-    const { email, phone, password } = req.body;
+  const { email, phone, password, subscriptionLevel } = req.body;
 
-    try {
-        const existingUser = await User.findOne({
-            where: {
-                [Op.or]: [{ email }, { phone }]
-            }
-        });
-        if (existingUser) return res.status(400).json({ msg: 'User already exists' });
+  try {
+      const existingUser = await User.findOne({
+          where: { [Op.or]: [{ email }, { phone }] }
+      });
+      if (existingUser) return res.status(400).json({ msg: 'User already exists' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await User.create({ email, phone, password: hashedPassword });
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await User.create({ email, phone, password: hashedPassword });
 
-        res.status(201).json({ msg: 'User registered', user: newUser });
-    } catch (err) {
-        res.status(500).json({ msg: err.message });
-    }
+      const token = jwt.sign(
+          { id: newUser.id, subscriptionLevel },
+          process.env.JWT_SECRET,
+          { expiresIn: '7d' }
+      );
+
+      await UserSubscription.create({
+          id: newUser.id,
+          phone,
+          subscriptionLevel,
+          token
+      });
+
+      res.status(201).json({
+          msg: 'User registered',
+          user: newUser,
+          subscriptionLevel,
+          token
+      });
+  } catch (err) {
+      res.status(500).json({ msg: err.message });
+  }
 };
+
 
 exports.login = async (req, res) => {
     const { loginMethod, value, password } = req.body;
@@ -46,6 +64,16 @@ exports.login = async (req, res) => {
     } catch (err) {
         res.status(500).json({ msg: err.message });
     }
+    const subscription = await UserSubscription.findOne({ where: { id: user.id } });
+
+    const token = jwt.sign(
+    { id: user.id, subscriptionLevel: subscription.subscriptionLevel },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+    );
+
+    res.json({ token, subscriptionLevel: subscription.subscriptionLevel });
+
 };
 
 exports.forgotPassword = async (req, res) => {

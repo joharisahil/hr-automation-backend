@@ -34,3 +34,30 @@ router.get('/logout', (req, res) => {
 });
 
 module.exports = router;
+
+
+const jwt = require('jsonwebtoken');
+
+
+// Middleware to verify token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Token not found' });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Token invalid' });
+    req.user = user;
+    next();
+  });
+};
+
+// Add this route
+router.get('/protected', authenticateToken, (req, res) => {
+  res.json({
+    message: 'You accessed a protected route!',
+    user: req.user
+  });
+});
+
+module.exports = router;

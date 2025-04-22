@@ -48,3 +48,9 @@ app.get('/dashboard', (req, res) => {
 // Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+const authenticateToken = require('./middleware/authMiddleware');
+
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({ message: 'Access granted to protected route', user: req.user });
+});

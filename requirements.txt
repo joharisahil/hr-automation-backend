@@ -1,1 +1,0 @@
-express dotenv mysql2 sequelize bcryptjs jsonwebtoken

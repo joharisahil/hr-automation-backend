@@ -1,0 +1,125 @@
+const db = require("../config/db");
+const { generateToken } = require("../utils/token");
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Signup + Send OTP
+exports.signup = async (req, res) => {
+  const { phone_no, name } = req.body;
+
+  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  if (user.length > 0) return res.status(400).send("User already exists");
+
+  await db.query("INSERT INTO users (phone_no, name) VALUES (?, ?)", [phone_no, name]);
+
+  // Send OTP
+  const [newUser] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  const otp = generateOTP();
+  const expiresAt = new Date(Date.now() + 5 * 60000); // 5min
+
+  await db.query(
+    "INSERT INTO otp (user_id, otp_code, expires_at) VALUES (?, ?, ?)",
+    [newUser[0].user_id, otp, expiresAt]
+  );
+
+  console.log(`OTP for ${phone_no}: ${otp}`);
+  res.send("OTP sent. Please verify.");
+};
+
+// Login - Send OTP only
+exports.login = async (req, res) => {
+  const { phone_no } = req.body;
+  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  if (user.length === 0) return res.status(404).send("User not found");
+
+  const otp = generateOTP();
+  const expiresAt = new Date(Date.now() + 5 * 60000); 
+
+  await db.query(
+    "INSERT INTO otp (user_id, otp_code, expires_at) VALUES (?, ?, ?)",
+    [user[0].user_id, otp, expiresAt]
+  );
+
+  console.log(`OTP for ${phone_no}: ${otp}`);
+  res.send("OTP sent. Please verify.");
+};
+
+// OTP Verification - Final Login
+exports.verifyOtp = async (req, res) => {
+  const { phone_no, otp_code } = req.body;
+
+  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  if (user.length === 0) return res.status(404).send("User not found");
+
+  const [otpData] = await db.query(
+    "SELECT * FROM otp WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+    [user[0].user_id]
+  );
+
+  if (
+    !otpData.length ||
+    otpData[0].otp_code !== otp_code ||
+    new Date(otpData[0].expires_at) < new Date()
+  ) {
+    return res.status(401).send("Invalid or expired OTP");
+  }
+
+  const { token, expiresAt } = generateToken({ user_id: user[0].user_id }, "3d");
+
+  await db.query(
+    "INSERT INTO tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+    [user[0].user_id, token, expiresAt]
+  );
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    maxAge: 3600000,
+  });
+
+  res.send("OTP verified and logged in");
+};
+
+// Resend OTP
+exports.resendOtp = async (req, res) => {
+  const { phone_no } = req.body;
+  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  if (user.length === 0) return res.status(404).send("User not found");
+
+  const otp = generateOTP();
+  const expiresAt = new Date(Date.now() + 5 * 60000);
+
+  await db.query(
+    "INSERT INTO otp (user_id, otp_code, expires_at) VALUES (?, ?, ?)",
+    [user[0].user_id, otp, expiresAt]
+  );
+
+  console.log(`Resent OTP for ${phone_no}: ${otp}`);
+  res.send("OTP resent");
+};
+
+// Logout
+exports.logout = async (req, res) => {
+  const token = req.cookies.token;
+  if (token) {
+    await db.query("DELETE FROM tokens WHERE token = ?", [token]);
+    res.clearCookie("token");
+  }
+  res.send("Logged out");
+};
+
+// Check Authentication
+exports.checkAuth = async (req, res) => {
+  try {
+    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [req.userId]);
+    if (user.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, user: user[0] });
+  } catch (error) {
+    console.log("Error in checkAuth", error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

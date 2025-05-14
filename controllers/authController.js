@@ -7,7 +7,7 @@ function generateOTP() {
 
 // Signup + Send OTP
 exports.signuplog = async (req, res) => {
-  const { phone_no, name } = req.body;
+  const { phone_no, name, firebase_token,device_token } = req.body;
 
   const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
 
@@ -19,7 +19,7 @@ exports.signuplog = async (req, res) => {
   } else {
     // New user, name required
     if (!name) return res.status(400).send("Name is required for new users");
-    const result = await db.query("INSERT INTO users (phone_no, name) VALUES (?, ?)", [phone_no, name]);
+    const result = await db.query("INSERT INTO users (phone_no, name) VALUES (?, ?, ?,?)", [phone_no, name,firebase_token,device_token]);
     userId = result[0].insertId;
   }
 
@@ -38,25 +38,37 @@ exports.signuplog = async (req, res) => {
 
 
 exports.verifyOtp = async (req, res) => {
-  const { phone_no, otp_code } = req.body;
+  const { phone_no, otp_code,firebase_token,device_token } = req.body;
+  let firebaseToken,deviceToken;
 
   const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
   if (user.length === 0) return res.status(404).send("User not found");
+  else{
+    firebaseToken = user[0].firebase_token;
+    deviceToken = user[0].device_token;
+  }
+
 
   const [otpData] = await db.query(
     "SELECT * FROM otp WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
     [user[0].user_id]
   );
+ 
 
   if (
     !otpData.length ||
     otpData[0].otp_code !== otp_code ||
-    new Date(otpData[0].expires_at) < new Date()
+    new Date(otpData[0].expires_at) < new Date()|| firebaseToken !== firebase_token || deviceToken !== device_token
   ) {
     return res.status(401).send("Invalid or expired OTP");
   }
 
-  const { token, expiresAt } = generateToken({ user_id: user[0].user_id }, "3d");
+  const { token, expiresAt } = generateToken({ user_id: user[0].user_id,
+    phone_no: user[0].phone_no,
+    name: user[0].name,
+    firebase_token:firebase_token,
+    device_token:device_token
+   }, "3d");
 
   await db.query(
     "INSERT INTO tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
@@ -65,7 +77,7 @@ exports.verifyOtp = async (req, res) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    maxAge: 3600000,
+    maxAge: 3600000,s
   });
 
   res.send("OTP verified and logged in");

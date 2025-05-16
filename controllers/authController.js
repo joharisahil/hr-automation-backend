@@ -6,7 +6,10 @@ function generateOTP() {
 }
 
 // Signup + Send OTP
+
+
 exports.signuplog = async (req, res) => {
+  console.log("signuplogin started");
   const { phone_no, name } = req.body;
 
   const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
@@ -37,10 +40,14 @@ exports.signuplog = async (req, res) => {
 
   console.log(`OTP for ${phone_no}: ${otp}`);
   res.send("OTP sent. Please verify.");
+  console.log("signuplogin ended");
 };
 
+
 // Verify OTP
+
 exports.verifyOtp = async (req, res) => {
+  console.log("verifyOtp started");
   const { phone_no, otp_code, firebase_token, device_token } = req.body;
 
   const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
@@ -120,17 +127,103 @@ exports.verifyOtp = async (req, res) => {
   });
 
   res.send("OTP verified and logged in");
+  console.log("verifyOtp ended");
 };
 
+
 // Logout
+
 exports.logout = async (req, res) => {
+  console.log("logout started");
   const token = req.cookies.token;
   if (token) {
     await db.query("DELETE FROM tokens WHERE token = ?", [token]);
     res.clearCookie("token");
   }
   res.send("Logged out");
+  console.log("logout ended");
 };
+
+// Organization Entry
+exports.organization = async (req, res) => {
+  console.log("Organization entry started");
+
+  const { org_name, role } = req.body;
+  const user_id = req.userId;
+
+  try {
+    // 1. Check if user exists
+    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [user_id]);
+    if (user.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // 2. Insert into organization and get latest org_id via insertId
+    const [orgResult] = await db.query("INSERT INTO organization (org_name) VALUES (?)", [org_name]);
+    const org_id = orgResult.insertId;
+
+    // 3. Insert into org_user table
+    await db.query("INSERT INTO org_user (user_id, org_id, role) VALUES (?, ?, ?)", [user_id, org_id, role]);
+
+    console.log("Organization entry ended");
+
+    return res.status(201).json({
+      success: true,
+      message: "Organization and user role added",
+      data: {
+        org_id,
+        org_name,
+        user_id,
+        role
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in organization:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.orgSubscription = async (req, res) => {
+  console.log("orgSubscription started");
+  user_id=req.userId;
+    const { plan_id } = req.body; // plan_id is required
+
+  try{
+    const[user] = await db.query("SELECT * FROM org_user WHERE user_id = ?", [user_id]);
+    if(user.length === 0){
+      return res.status(404).json({success:false,message:"User not found in any organization"});
+    }
+    const org_id = user[0].org_id;
+    const id=user[0].id;
+    cosnt [planResult] = await db.query("SELECT * FROM plan WHERE plan_id = ?", [plan_id]);
+    if(planResult.length === 0){
+      return res.status(404).json({success:false,message:"Plan not found"});
+    }
+    const plan_days= planResult[0].plan_days;
+    const end_date = new Date();
+    end_date.setDate(end_date.getDate() + plan_days);
+
+    await db.query("insert into org_subscription (id,org_id,plan_id,end_date) values (?,?,?,?)",[id,org_id,plan_id,end_date]);
+
+    res.status(201).json({
+      success:true,
+      message:"Subscription added successfully",
+      data:{
+        id,
+        org_id,
+        plan_id,
+        end_date
+      }
+    });
+  }
+ catch(error){
+    console.log("Error in orgSubscription",error);
+    return res.status(500).json({success:false,message:error.message});
+  }
+ console.log("orgSubscription ended");
+ 
+}
 
 // Check Auth
 exports.checkAuth = async (req, res) => {

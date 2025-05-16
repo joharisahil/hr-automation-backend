@@ -12,4 +12,6 @@ router.post("/verify-otp", authController.verifyOtp);
 
 router.post("/logout", authController.logout);
 
+router.post("/org-subscription", verifyToken, authController.orgSubscription);
+
 module.exports = router;

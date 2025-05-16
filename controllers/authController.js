@@ -7,18 +7,19 @@ function generateOTP() {
 
 // Signup + Send OTP
 
-
 exports.signuplog = async (req, res) => {
   console.log("signuplogin started");
   const { phone_no, name } = req.body;
 
-  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [
+    phone_no,
+  ]);
 
-  let userId, isNewUser = false;
+  let userId,
+    isNewUser = false;
 
   if (user.length > 0) {
     userId = user[0].user_id;
-
   } else {
     if (!name) return res.status(400).send("Name is required for new users");
     const result = await db.query(
@@ -43,14 +44,15 @@ exports.signuplog = async (req, res) => {
   console.log("signuplogin ended");
 };
 
-
 // Verify OTP
 
 exports.verifyOtp = async (req, res) => {
   console.log("verifyOtp started");
   const { phone_no, otp_code, firebase_token, device_token } = req.body;
 
-  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [phone_no]);
+  const [user] = await db.query("SELECT * FROM users WHERE phone_no = ?", [
+    phone_no,
+  ]);
   if (user.length === 0) return res.status(404).send("User not found");
 
   const userId = user[0].user_id;
@@ -65,7 +67,7 @@ exports.verifyOtp = async (req, res) => {
   const now = new Date();
 
   const isExpired = !otp || new Date(otp.expires_at) < now;
-  const isInvalid = otp.otp_code !== otp_code 
+  const isInvalid = otp.otp_code !== otp_code;
 
   if (!otp || isExpired || isInvalid) {
     // Delete OTP
@@ -77,7 +79,6 @@ exports.verifyOtp = async (req, res) => {
     }
     // If it's an existing user, update the firebase_token and device_token
 
-
     // if (otp && otp.is_new_user === 0) {
     //      //check firebase_token and device_token
     // if (user[0].firebase_token !== firebase_token || user[0].device_token !== device_token) {
@@ -88,21 +89,20 @@ exports.verifyOtp = async (req, res) => {
     //   ]);
     // }
     // }
-    
-   // await db.query(" update users set firebase_token = ?, device_token = ? where user_id = ?",[])
+
+    // await db.query(" update users set firebase_token = ?, device_token = ? where user_id = ?",[])
 
     return res.status(401).send("Invalid or expired OTP");
   }
 
-// updating firebase and device token
-  await db.query("UPDATE users SET firebase_token = ?, device_token = ? WHERE user_id = ?", [
-  firebase_token,
-  device_token,
-  userId,])
+  // updating firebase and device token
+  await db.query(
+    "UPDATE users SET firebase_token = ?, device_token = ? WHERE user_id = ?",
+    [firebase_token, device_token, userId]
+  );
 
- // Mark OTP as used
- await db.query("UPDATE otp SET used = 1 WHERE otp_id = ?", [otp.otp_id]);
-
+  // Mark OTP as used
+  await db.query("UPDATE otp SET used = 1 WHERE otp_id = ?", [otp.otp_id]);
 
   const { token, expiresAt } = generateToken(
     {
@@ -115,11 +115,10 @@ exports.verifyOtp = async (req, res) => {
     "3d"
   );
 
-  await db.query("INSERT INTO tokens (user_id, token, expires_at) VALUES (?, ?, ?)", [
-    userId,
-    token,
-    expiresAt,
-  ]);
+  await db.query(
+    "INSERT INTO tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+    [userId, token, expiresAt]
+  );
 
   res.cookie("token", token, {
     httpOnly: true,
@@ -129,7 +128,6 @@ exports.verifyOtp = async (req, res) => {
   res.send("OTP verified and logged in");
   console.log("verifyOtp ended");
 };
-
 
 // Logout
 
@@ -153,19 +151,27 @@ exports.organization = async (req, res) => {
 
   try {
     // 1. Check if user exists
-    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [user_id]);
+    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [
+      user_id,
+    ]);
     if (user.length === 0) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // 2. Insert into organization and get latest org_id via insertId
-    const [orgResult] = await db.query("INSERT INTO organization (org_name) VALUES (?)", [org_name]);
+    const [orgResult] = await db.query(
+      "INSERT INTO organization (org_name) VALUES (?)",
+      [org_name]
+    );
     const org_id = orgResult.insertId;
 
     // 3. Insert into org_user table
-    await db.query("INSERT INTO org_user (user_id, org_id, role) VALUES (?, ?, ?)", [user_id, org_id, role]);
-
-    console.log("Organization entry ended");
+    await db.query(
+      "INSERT INTO org_user (user_id, org_id, role) VALUES (?, ?, ?)",
+      [user_id, org_id, role]
+    );
 
     return res.status(201).json({
       success: true,
@@ -174,63 +180,108 @@ exports.organization = async (req, res) => {
         org_id,
         org_name,
         user_id,
-        role
-      }
+        role,
+      },
     });
-
+    console.log("Organization entry ended");
   } catch (error) {
     console.error("Error in organization:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+// Organization Subscription
 exports.orgSubscription = async (req, res) => {
   console.log("orgSubscription started");
-  user_id=req.userId;
-    const { plan_id } = req.body; // plan_id is required
+  const user_id = req.userId;
+  const { plan_id } = req.body;
 
-  try{
-    const[user] = await db.query("SELECT * FROM org_user WHERE user_id = ?", [user_id]);
-    if(user.length === 0){
-      return res.status(404).json({success:false,message:"User not found in any organization"});
+  try {
+    let status = "active";
+
+    // 1. Get user/org info
+    const [user] = await db.query("SELECT * FROM org_user WHERE user_id = ?", [
+      user_id,
+    ]);
+    if (user.length === 0) {
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "User not found in any organization",
+        });
     }
+
     const org_id = user[0].org_id;
-    const id=user[0].id;
-    cosnt [planResult] = await db.query("SELECT * FROM plan WHERE plan_id = ?", [plan_id]);
-    if(planResult.length === 0){
-      return res.status(404).json({success:false,message:"Plan not found"});
+    const id = user[0].id;
+
+    // 2. Expire any active subscription
+    const [existingSub] = await db.query(
+      "SELECT * FROM org_subscription WHERE id = ? AND status = 'active'",
+      [id]
+    );
+
+    if (existingSub.length > 0) {
+      await db.query(
+        "UPDATE org_subscription SET status = 'expired' WHERE subscription_id = ?",
+        [existingSub[0].subscription_id]
+      );
     }
-    const plan_days= planResult[0].plan_days;
-    const end_date = new Date();
+
+    // 3. Get plan info
+    const [planResult] = await db.query(
+      "SELECT * FROM plans WHERE plan_id = ?",
+      [plan_id]
+    );
+    if (planResult.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Plan not found" });
+    }
+
+    const plan_days = planResult[0].plan_days;
+
+    // 4. Calculate dates
+    const start_date = new Date();
+    const end_date = new Date(start_date);
     end_date.setDate(end_date.getDate() + plan_days);
 
-    await db.query("insert into org_subscription (id,org_id,plan_id,end_date) values (?,?,?,?)",[id,org_id,plan_id,end_date]);
+    // 5. Insert new subscription
+    await db.query(
+      "INSERT INTO org_subscription (id, org_id, plan_id, end_date, status) VALUES (?, ?, ?, ?, ?)",
+      [id, org_id, plan_id, end_date, status]
+    );
 
     res.status(201).json({
-      success:true,
-      message:"Subscription added successfully",
-      data:{
+      success: true,
+      message: "Subscription updated successfully",
+      data: {
         id,
         org_id,
         plan_id,
-        end_date
-      }
+        start_date,
+        end_date,
+        status,
+      },
     });
+  } catch (error) {
+    console.log("Error in orgSubscription", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
- catch(error){
-    console.log("Error in orgSubscription",error);
-    return res.status(500).json({success:false,message:error.message});
-  }
- console.log("orgSubscription ended");
- 
-}
+
+  console.log("orgSubscription ended");
+};
 
 // Check Auth
 exports.checkAuth = async (req, res) => {
   try {
-    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [req.userId]);
+    const [user] = await db.query("SELECT * FROM users WHERE user_id = ?", [
+      req.userId,
+    ]);
     if (user.length === 0) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     res.status(200).json({ success: true, user: user[0] });

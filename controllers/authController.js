@@ -120,12 +120,19 @@ exports.verifyOtp = async (req, res) => {
     [userId, token, expiresAt]
   );
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    maxAge: 3600000,
-  });
+  // res.cookie("token", token, {
 
-  res.send("OTP verified and logged in");
+  //   httpOnly: true,
+  //   maxAge: 3600000,
+  // });
+
+  return res.status(201).json({
+      success: true,
+      message: "otp verified and logged in",
+      data: {
+       token
+      },
+    });
   console.log("verifyOtp ended");
 };
 
@@ -146,8 +153,9 @@ exports.logout = async (req, res) => {
 exports.organization = async (req, res) => {
   console.log("Organization entry started");
 
-  const { org_name, role } = req.body;
+  const { org_name} = req.body;
   const user_id = req.userId;
+  const role="primary"
 
   try {
     // 1. Check if user exists
@@ -169,10 +177,10 @@ exports.organization = async (req, res) => {
 
     // 3. Insert into org_user table
     await db.query(
-      "INSERT INTO org_user (user_id, org_id, role) VALUES (?, ?, ?)",
+      "INSERT INTO org_user (user_id, org_id, role) VALUES (?, ?, ? )",
       [user_id, org_id, role]
     );
-
+    console.log("Organization entry ended");
     return res.status(201).json({
       success: true,
       message: "Organization and user role added",
@@ -183,7 +191,7 @@ exports.organization = async (req, res) => {
         role,
       },
     });
-    console.log("Organization entry ended");
+    
   } catch (error) {
     console.error("Error in organization:", error);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -213,7 +221,7 @@ exports.orgSubscription = async (req, res) => {
     }
 
     const org_id = user[0].org_id;
-    const id = user[0].id;
+    const id = user[0].org_user_id;
 
     // 2. Expire any active subscription
     const [existingSub] = await db.query(
@@ -245,6 +253,10 @@ exports.orgSubscription = async (req, res) => {
     const start_date = new Date();
     const end_date = new Date(start_date);
     end_date.setDate(end_date.getDate() + plan_days);
+
+    if(start_date.getDate()<db.end_date.getDate()){
+      status = "expired";
+    }
 
     // 5. Insert new subscription
     await db.query(

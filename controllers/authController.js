@@ -125,6 +125,8 @@ exports.verifyOtp = async (req, res) => {
   //   httpOnly: true,
   //   maxAge: 3600000,
   // });
+// res mot working
+
 
   return res.status(201).json({
       success: true,
@@ -211,6 +213,7 @@ exports.orgSubscription = async (req, res) => {
     const [user] = await db.query("SELECT * FROM org_user WHERE user_id = ?", [
       user_id,
     ]);
+    
     if (user.length === 0) {
       return res
         .status(404)

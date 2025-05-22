@@ -1,24 +1,23 @@
-require("dotenv").config();
-const jwt = require("jsonwebtoken"); // ✅ fixed
-
 exports.verifyToken = (req, res, next) => {
-  const token = req.cookies.token;
+  const authHeader = req.headers.authorization;
+  console.log("Authorization Header:", authHeader); // 👈 Add this
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Unauthorized - no token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
 
   try {
-    if (!token) {
-      return res.status(401).json({ success: false, message: "Unauthorized - no token provided" });
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (!decoded) {
-      return res.status(401).json({ success: false, message: "Unauthorized - invalid token" });
-    }
-
-    req.userId = decoded.user_id;   // or decoded.userId based on your `generateToken` logic
+    req.userId = decoded.user_id;
+    console.log("Decoded User ID:", decoded.user_id); // 👈 Add this
     next();
-  } catch (error) {
-    console.log("Error in verifyToken", error);
-    return res.status(500).json({ success: false, message: "Server error" });
+  } catch (err) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid or expired token" });
   }
 };

@@ -139,15 +139,30 @@ exports.verifyOtp = async (req, res) => {
 // Logout
 
 exports.logout = async (req, res) => {
-  console.log("logout started");
-  const token = req.cookies.token;
-  if (token) {
+  try {
+    console.log("Logout started");
+
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(400).json({ message: "Authorization header missing or malformed" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(400).json({ message: "Token not found" });
+    }
+
+    // Assuming you store tokens in DB and want to invalidate by deleting
     await db.query("DELETE FROM tokens WHERE token = ?", [token]);
-    res.clearCookie("token");
+
+    res.status(200).json({ message: "Logged out successfully" });
+    console.log("Logout ended");
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ message: "Server error during logout" });
   }
-  res.send("Logged out");
-  console.log("logout ended");
 };
+
 
 // Organization Entry
 exports.organization = async (req, res) => {
@@ -205,70 +220,111 @@ exports.orgSubscription = async (req, res) => {
   const { plan_id } = req.body;
 
   try {
-    let status = "active";
-
     // 1. Get user/org info
-    const [user] = await db.query("SELECT * FROM org_user WHERE user_id = ?", [
-      user_id,
-    ]);
+    const [user] = await db.query("SELECT * FROM org_user WHERE user_id = ?", [user_id]);
     if (user.length === 0) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "User not found in any organization",
-        });
+      return res.status(404).json({ success: false, message: "User not found in any organization" });
     }
 
     const org_id = user[0].org_id;
-    const id = user[0].org_user_id;
+    const org_user_id = user[0].id;   // Primary key in org_user table
+    const f_set = user[0].f_set;
 
-    // 2. Expire any active subscription
-    const [existingSub] = await db.query(
-      "SELECT * FROM org_subscription WHERE id = ? AND status = 'active'",
-      [id]
+    // 2. Check for existing subscription
+    const [subscriptions] = await db.query(
+      "SELECT * FROM org_subscription WHERE org_user_id = ? ORDER BY end_date DESC LIMIT 1",
+      [org_user_id]
     );
 
-    if (existingSub.length > 0) {
+    let status = "active";
+    let today = new Date();
+
+    if (subscriptions.length > 0) {
+      const latestSub = subscriptions[0];
+      const endDate = new Date(latestSub.end_date);
+
+      // Auto-expire if expired or different plan
       await db.query(
         "UPDATE org_subscription SET status = 'expired' WHERE subscription_id = ?",
-        [existingSub[0].subscription_id]
+        [latestSub.subscription_id]
       );
+
+      // ❌ Prevent free access again if already used (based on f_set)
+      if (plan_id === "f_001" && f_set === 1) {
+        return res.status(403).json({
+          success: false,
+          message: "Free access already used once"
+        });
+      }
+    } else {
+      // First-time user trying to take free access
+      if (!plan_id || plan_id === "f_001") {
+        // ❌ Prevent free access if already used (based on f_set)
+        if (f_set === 1) {
+          return res.status(403).json({
+            success: false,
+            message: "Free access already used once"
+          });
+        }
+
+        const freePlanId = "f_001";
+        const [freePlan] = await db.query("SELECT plan_days FROM plans WHERE plan_id = ?", [freePlanId]);
+
+        if (freePlan.length === 0) {
+          return res.status(404).json({ success: false, message: "Free plan not found" });
+        }
+
+        const plan_days = freePlan[0].plan_days;
+        const start_date = new Date();
+        const end_date = new Date();
+        end_date.setDate(start_date.getDate() + plan_days);
+
+        // Grant free subscription
+        await db.query(
+          "INSERT INTO org_subscription (org_user_id, org_id, plan_id, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)",
+          [org_user_id, org_id, freePlanId, start_date, end_date, "active"]
+        );
+
+        // 🔐 Mark free access used
+        await db.query("UPDATE org_user SET f_set = 1 WHERE id = ?", [org_user_id]);
+
+        return res.status(201).json({
+          success: true,
+          message: "Free access granted",
+          data: {
+            org_user_id,
+            org_id,
+            plan_id: freePlanId,
+            start_date,
+            end_date,
+            status: "active"
+          }
+        });
+      }
     }
 
-    // 3. Get plan info
-    const [planResult] = await db.query(
-      "SELECT * FROM plans WHERE plan_id = ?",
-      [plan_id]
-    );
+    // 3. Get new plan info (paid)
+    const [planResult] = await db.query("SELECT * FROM plans WHERE plan_id = ?", [plan_id]);
     if (planResult.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Plan not found" });
+      return res.status(404).json({ success: false, message: "Selected plan not found" });
     }
 
     const plan_days = planResult[0].plan_days;
-
-    // 4. Calculate dates
     const start_date = new Date();
     const end_date = new Date(start_date);
-    end_date.setDate(end_date.getDate() + plan_days);
+    end_date.setDate(start_date.getDate() + plan_days);
 
-    if(start_date.getDate()<db.end_date.getDate()){
-      status = "expired";
-    }
-
-    // 5. Insert new subscription
+    // 4. Insert new (paid) subscription
     await db.query(
-      "INSERT INTO org_subscription (id, org_id, plan_id, end_date, status) VALUES (?, ?, ?, ?, ?)",
-      [id, org_id, plan_id, end_date, status]
+      "INSERT INTO org_subscription (org_user_id, org_id, plan_id, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [org_user_id, org_id, plan_id, start_date, end_date, status]
     );
 
     res.status(201).json({
       success: true,
-      message: "Subscription updated successfully",
+      message: "Subscription activated",
       data: {
-        id,
+        org_user_id,
         org_id,
         plan_id,
         start_date,
@@ -276,6 +332,7 @@ exports.orgSubscription = async (req, res) => {
         status,
       },
     });
+
   } catch (error) {
     console.log("Error in orgSubscription", error);
     return res.status(500).json({ success: false, message: error.message });
@@ -283,6 +340,9 @@ exports.orgSubscription = async (req, res) => {
 
   console.log("orgSubscription ended");
 };
+
+
+
 
 // Check Auth
 exports.checkAuth = async (req, res) => {

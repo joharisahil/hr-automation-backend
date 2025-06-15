@@ -12,6 +12,7 @@ const { signuplog } = require("../controllers/auth/signupLogin.controller");
 // Organization controllers
 const { organization } = require("../controllers/organization/org.controller");
 const { orgSubscription } = require("../controllers/organization/subscription.controller");
+const { invite } = require("../controllers/organization/invite.controller");
 
 // Routes
 router.get('/check-auth', verifyToken, checkAuth);
@@ -25,5 +26,7 @@ router.post("/logout", logout);
 router.post("/organization", verifyToken, organization);
 
 router.post("/org-subscription", verifyToken, orgSubscription);
+
+router.post("/org-invite/:token",verifyToken,invite);
 
 module.exports = router;

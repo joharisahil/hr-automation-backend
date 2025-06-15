@@ -6,8 +6,9 @@ const {
 const { findUserById } = require("../../model/user.model");
 
 exports.organization = async (req, res) => {
-  const { org_name, role } = req.body;
+  const { org_name } = req.body;
   const user_id = req.userId;
+  const role= "primary"; // Default role for the user creating the organization
 
   try {
     // 1. Check if user exists

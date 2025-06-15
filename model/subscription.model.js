@@ -24,3 +24,10 @@ exports.insertSubscription = (
     "INSERT INTO org_subscription (org_user_id, org_id, plan_id, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)",
     [org_user_id, org_id, plan_id, start_date, end_date, status]
   );
+
+exports.getSubscriptionById = (org_id) =>(
+  db.query(
+  "SELECT org_user_id FROM org_subscription WHERE org_id= ?",
+    [org_id]
+  )
+)

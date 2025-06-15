@@ -23,6 +23,7 @@ exports.verifyOtp = async (req, res) => {
 
   // 2. Get latest unused OTP
   const [otpData] = await getLatestUnusedOtp(userId);
+  
   const otp = otpData?.[0];
   const now = new Date();
 

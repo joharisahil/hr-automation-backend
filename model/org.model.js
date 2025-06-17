@@ -15,5 +15,5 @@ exports.findOrgUserByUserId = (user_id) =>
 exports.updateFSet = (org_user_id) =>
   db.query("UPDATE org_user SET f_set = 1 WHERE id = ?", [org_user_id]);
 
-exports.orgname=(org_id) =>
+exports.orgName=(org_id) =>
   db.query("SELECT org_name FROM organization WHERE org_id = ?", [org_id]);

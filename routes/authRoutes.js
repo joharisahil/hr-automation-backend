@@ -13,6 +13,10 @@ const { signuplog } = require("../controllers/auth/signupLogin.controller");
 const { organization } = require("../controllers/organization/org.controller");
 const { orgSubscription } = require("../controllers/organization/subscription.controller");
 const { invite } = require("../controllers/organization/invite.controller");
+const { getPendingRequests } = require("../controllers/organization/getPendingRequests");
+const { confirmMember } = require("../controllers/organization/confirmMember");
+ const { addMember } = require("../controllers/organization/addMember"); 
+
 
 // Routes
 router.get('/check-auth', verifyToken, checkAuth);
@@ -23,10 +27,18 @@ router.post("/verify-otp", verifyOtp);
 
 router.post("/logout", logout);
 
-router.post("/organization", verifyToken, organization);
+router.post("/organization", verifyToken , organization);
 
-router.post("/org-subscription", verifyToken, orgSubscription);
+router.post("/org-subscription", verifyToken , orgSubscription);
 
-router.post("/org-invite/:token",verifyToken,invite);
+router.post("/org-invite", verifyToken ,invite);       
+
+router.post("/org/add-member/:invite_token", verifyToken, addMember); 
+
+router.post('/org/pending-requests', verifyToken , getPendingRequests);
+
+router.patch('/org/member/:member_id/status', verifyToken , confirmMember);
+
+// router.post("/org/confirm-member/:invite_token", verifyToken, confirmMember);
 
 module.exports = router;

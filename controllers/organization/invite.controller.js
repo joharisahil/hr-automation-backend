@@ -4,7 +4,7 @@ const { findUserById } = require('../../model/user.model');
 const { findOrgUserByUserId } = require('../../model/org.model');  
 const { insertInvite, insertLeader } = require('../../model/invite.model');
 const {getSubscriptionById} = require('../../model/subscription.model');
-const { get } = require('http');
+
 
 
 exports.invite= async(req , res)=>{
@@ -34,7 +34,7 @@ exports.invite= async(req , res)=>{
 
         insertInvite(orgUserData[0].org_id, phone_no, invite_token, expiresAt);
 
-        insertLeader(userId,orgUserData[0].org_id,org_user_id);
+        // insertLeader(userId,orgUserData[0].org_id,org_user_id);
         
         
     }

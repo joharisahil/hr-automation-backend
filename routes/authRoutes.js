@@ -33,7 +33,7 @@ router.post("/org-subscription", verifyToken , orgSubscription);
 
 router.post("/org-invite", verifyToken ,invite);       
 
-router.post("/org/add-member/:invite_token", verifyToken, addMember); 
+router.post("/invite/:invite_token", verifyToken, addMember); 
 
 router.post('/org/pending-requests', verifyToken , getPendingRequests);
 

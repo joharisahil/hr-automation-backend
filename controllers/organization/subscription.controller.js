@@ -3,9 +3,9 @@ const {
   getLatestSubscription,
   insertSubscription,
   expireSubscription,
-} = require("../../model/org.model");
+} = require("../../model/subscription.model");
 const { getPlanById } = require("../../model/plan.model"); // Moved plan query here
-const { updateFSet } = require("../../model/org.model");  // For setting f_set = 1
+const { updateFSet,findOrgUserByUserId} = require("../../model/org.model");  // For setting f_set = 1
 
 exports.orgSubscription = async (req, res) => {
   const user_id = req.userId;
@@ -16,10 +16,16 @@ exports.orgSubscription = async (req, res) => {
     if (user.length === 0) {
       return res.status(404).json({ success: false, message: "User not found in any organization" });
     }
+const [orgUsers] = await findOrgUserByUserId(user_id); // This is the actual array of rows
 
-    const org_id = user[0].org_id;
-    const org_user_id = user[0].id;
-    const f_set = user[0].f_set;
+if (!orgUsers || orgUsers.length === 0) {
+  return res.status(404).json({ success: false, message: "Organization user not found" });
+}
+
+const org_id = orgUsers[0].org_id;
+const org_user_id = orgUsers[0].id;
+const f_set = orgUsers[0].f_set;
+
 
     const [subscriptions] = await getLatestSubscription(org_user_id);
 

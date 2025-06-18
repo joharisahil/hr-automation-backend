@@ -24,18 +24,25 @@ exports.invite= async(req , res)=>{
         const invite_token=crypto.randomBytes(20).toString("hex");
         const expiresAt= new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
 
-        const inviteLink='${process.env.CLIENT_URL}/invite/${invite_token}';
+        const inviteLink = `${process.env.CLIENT_URL}/api/auth/invite/${invite_token}`;
+
         console.log(`Invite link: ${inviteLink}`);
 
-        const org_user_id=getSubscriptionById(orgUserData[0].org_id);
-        if(org_subs_id.length === 0){
+        const org_user_id= await getSubscriptionById(orgUserData[0].org_id);
+        if(org_user_id.length === 0){
             return res.status(404).json({success:false, message:"Organization subscription not found"});
         }
 
         insertInvite(orgUserData[0].org_id, phone_no, invite_token, expiresAt);
 
         // insertLeader(userId,orgUserData[0].org_id,org_user_id);
-        
+
+           res.status(201).json({ 
+            success: true,
+            message: "Invitation generated successfully",
+            inviteLink: inviteLink,
+            expiresAt: expiresAt
+        });
         
     }
     catch(error){

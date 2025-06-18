@@ -27,6 +27,7 @@ exports.verifyToken = (req, res, next) => {
     }
 
     req.userId = decoded.user_id;
+    req.phone_no = decoded.phone_no; // Assuming phone_no is also part of the token payload
     next();
   } catch (error) {
     console.log("Error in verifyToken:", error.message);

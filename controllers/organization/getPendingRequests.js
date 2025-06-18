@@ -1,4 +1,6 @@
 // for sending request..........
+const db = require('../../config/db'); // Adjust the path as necessary
+
 exports.getPendingRequests = async (req, res) => {
   const leaderId = req.userId;
 
@@ -6,7 +8,7 @@ exports.getPendingRequests = async (req, res) => {
     const [rows] = await db.query(`
       SELECT om.member_id, u.name, u.phone_no, o.org_name, om.joined_date
       FROM org_members om
-      JOIN users u ON om.member_id = u.id
+      JOIN users u ON om.member_id = u.user_id
       JOIN organization o ON om.org_id = o.org_id
       WHERE om.leader_id = ? AND om.status = 'pending'
     `, [leaderId]);

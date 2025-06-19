@@ -39,6 +39,6 @@ router.post('/org/pending-requests', verifyToken , getPendingRequests);
 
 router.patch('/org/member/:member_id/status', verifyToken , confirmMember);
 
-// router.post("/org/confirm-member/:invite_token", verifyToken, confirmMember);
+
 
 module.exports = router;

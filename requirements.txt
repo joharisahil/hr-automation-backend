@@ -1,1 +1,1 @@
-express dotenv mysql2 sequelize bcryptjs jsonwebtoken
+express dotenv mysql2 sequelize bcryptjs jsonwebtoken crypto cors body-parser

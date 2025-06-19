@@ -1,1 +1,33 @@
-express dotenv mysql2 sequelize bcryptjs jsonwebtoken crypto cors body-parser
+# Node.js Dependencies List
+# To install: npm install
+
+# Core Framework
+express@^5.1.0
+
+# Database
+mysql2@^3.14.0
+mongoose@^8.13.2
+sequelize@^6.37.7
+
+# Authentication & Security
+bcrypt@^5.1.1
+bcryptjs@^3.0.2
+jsonwebtoken@^9.0.2
+passport@^0.7.0
+passport-google-oauth20@^2.0.0
+passport-local@^1.0.0
+
+# Middleware
+body-parser@^2.2.0
+cookie-parser@^1.4.7
+cors@^2.8.5
+express-session@^1.18.1
+
+# Utilities
+axios@^1.8.4
+cross-env@^7.0.3
+dotenv@^16.5.0
+nodemailer@^6.10.1
+
+# Development Dependencies
+nodemon@^3.0.3

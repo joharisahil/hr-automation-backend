@@ -29,11 +29,7 @@ exports.organization = async (req, res) => {
         });
       }
 
-      // Uncomment this if you want to restrict multiple orgs by a primary user:
-      // return res.status(403).json({
-      //   success: false,
-      //   message: "Primary user already belongs to an organization",
-      // });
+      
     }
 
     // 3. Create new organization

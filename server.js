@@ -16,7 +16,7 @@ app.use(cors({ origin: "http://localhost:8081", credentials: true }));
 // 	app.use(express.static(path.join(__dirname, "/frontend/auth/dist")));
 
 // 	app.get("*", (req, res) => {
-// 		res.sendFile(path.resolve(__dirname, "frontend/auth", "dist", "index.html"));
+// 		res.sendFile(path.resolve(__dirname, "hr-automation-moblie", "dist", "index.html"));
 // 	});
 // }
 

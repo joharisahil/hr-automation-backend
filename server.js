@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 
 
-app.use(cors({ origin: "http://localhost:8081", credentials: true }));
+app.use(cors({ origin: ["http://localhost:8081", "http://localhost:5173"], credentials: true }));
 
 // if (process.env.NODE_ENV === "production") {
 // 	app.use(express.static(path.join(__dirname, "/frontend/auth/dist")));

@@ -10,7 +10,11 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 
 
-app.use(cors({ origin: ["http://localhost:8081", "http://localhost:5173","https://jam-analytics.netlify.app"], credentials: true }));
+app.use(cors({
+  origin: true, // Reflects the request origin
+  credentials: true
+}));
+
 
 // if (process.env.NODE_ENV === "production") {
 // 	app.use(express.static(path.join(__dirname, "/frontend/auth/dist")));
@@ -22,7 +26,9 @@ app.use(cors({ origin: ["http://localhost:8081", "http://localhost:5173","https:
 
 
 const authRoutes = require("./routes/authRoutes");
+const orgRoutes=require("./routes/orgRoutes");
 app.use("/api/auth", authRoutes);
+app.use("/api/org",orgRoutes)
 
 
 const PORT = process.env.PORT || 5000;

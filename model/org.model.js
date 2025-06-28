@@ -1,7 +1,7 @@
 const db = require("../config/db");
 
-exports.insertOrganization = (org_name) =>
-  db.query("INSERT INTO organization (org_name) VALUES (?)", [org_name]);
+exports.insertOrganization = (org_name,org_add,org_type) =>
+  db.query("INSERT INTO organization (org_name,org_add,org_type) VALUES (?,?,?)", [org_name,org_add,org_type]);
 
 exports.insertOrgUser = (user_id, org_id, role) =>
   db.query(

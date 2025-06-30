@@ -22,7 +22,7 @@ router.post("/org-invite", verifyToken ,invite);
 
 router.post("/invite/:invite_token", verifyToken, addMember); 
 
-router.post('/org/pending-requests', verifyToken , getPendingRequests);
+router.get('/org/pending-requests', verifyToken , getPendingRequests);
 
 router.patch('/org/member/:member_id/status', verifyToken , confirmMember);
 

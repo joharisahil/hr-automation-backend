@@ -17,3 +17,12 @@ exports.updateFSet = (org_user_id) =>
 
 exports.orgName=(org_id) =>
   db.query("SELECT org_name FROM organization WHERE org_id = ?", [org_id]);
+
+exports.findOrgName = (user_id) => 
+ db.query("SELECT o.org_name FROM org_user ou JOIN organization o ON ou.org_id = o.org_id WHERE ou.user_id = ? AND ou.role = 'primary'",[user_id])
+
+exports.findOrgNameSecondary= (member_id)=>
+  db.query("select o.org_name from organization o join org_members om on om.org_id=o.org_id where om.member_id=? and om.role='secondary'",[member_id]);
+
+exports.findMembersName= (org_id)=>
+  db.query("SELECT u.name from users u join org_members om on u.user_id=om.member_id where om.org_id=?",[org_id]);

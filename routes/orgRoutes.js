@@ -9,6 +9,8 @@ const { invite } = require("../controllers/organization/invite.controller");
 const { getPendingRequests } = require("../controllers/organization/getPendingRequests");
 const { confirmMember } = require("../controllers/organization/confirmMember");
 const { addMember } = require("../controllers/organization/addMember"); 
+const { orgName,orgNameSecondary }= require("../controllers/organization/orgName.controller");
+const { membersName }= require ("../controllers/organization/membersName")
 
 
 
@@ -23,5 +25,11 @@ router.post("/invite/:invite_token", verifyToken, addMember);
 router.post('/org/pending-requests', verifyToken , getPendingRequests);
 
 router.patch('/org/member/:member_id/status', verifyToken , confirmMember);
+
+router.get("/org-name", verifyToken, orgName)
+
+router.get("/members-name", verifyToken, membersName )
+
+router.get("/org-name-sec", verifyToken, orgNameSecondary);
 
 module.exports = router;

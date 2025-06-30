@@ -5,8 +5,6 @@ const { findOrgUserByUserId } = require('../../model/org.model');
 const { insertInvite, insertLeader } = require('../../model/invite.model');
 const {getSubscriptionById} = require('../../model/subscription.model');
 
-
-
 exports.invite= async(req , res)=>{
     const {phone_no}= req.body;
     const userId= req.userId;
@@ -24,7 +22,7 @@ exports.invite= async(req , res)=>{
         const invite_token=crypto.randomBytes(20).toString("hex");
         const expiresAt= new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
 
-        const inviteLink = `${process.env.CLIENT_URL}/api/auth/invite/${invite_token}`;
+        const inviteLink = `${process.env.CLIENT_URL}/api/org/invite/${invite_token}`;
 
         console.log(`Invite link: ${inviteLink}`);
 

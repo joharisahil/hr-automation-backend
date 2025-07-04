@@ -14,7 +14,7 @@ exports.orgName = async (req, res) => {
       });
     }
 
-    // Return first org name, or modify this to return all
+ 
     return res.status(200).json({
       success: true,
       orgName: orgNames,

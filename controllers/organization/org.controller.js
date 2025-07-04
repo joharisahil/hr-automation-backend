@@ -16,7 +16,7 @@ exports.organization = async (req, res) => {
     const [userData] = await findUserById(user_id);
     if (userData.length === 0) {
       return res
-        .status(404)
+        .status(404)         
         .json({ success: false, message: "User not found" });
     }                 
 

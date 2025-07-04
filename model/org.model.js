@@ -26,3 +26,6 @@ exports.findOrgNameSecondary= (member_id)=>
 
 exports.findMembersName= (org_id)=>
   db.query("SELECT u.name from users u join org_members om on u.user_id=om.member_id where om.org_id=?",[org_id]);
+
+exports.findOrgbyOrgId= (org_id) =>
+  db.query("select * from organization where org_id=?;",[org_id]);
